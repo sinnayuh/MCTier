@@ -1,0 +1,5 @@
+main: "codes.sinister.mctier.plugin.MCTierPlugin"
+name: 'MCTier'
+version: ${version}
+author: 'sin'
+api-version: '1.20'
