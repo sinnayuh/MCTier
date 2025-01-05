@@ -13,8 +13,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import revxrsal.commands.annotation.Command;
 import revxrsal.commands.annotation.DefaultFor;
-import revxrsal.commands.annotation.Subcommand;
-import revxrsal.commands.bukkit.annotation.CommandPermission;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -43,67 +41,65 @@ public class TierCommand {
     public void checkTier(Player sender, String target) {
         sender.sendMessage(Component.text("Fetching profile statistics...", NamedTextColor.RED));
 
-        Bukkit.getScheduler().runTaskLater(MCTier.getInstance().plugin, () -> {
-            Bukkit.getScheduler().runTaskAsynchronously(MCTier.getInstance().plugin, () -> {
-                try {
-                    String jsonResponse = fetchData(String.format(API_URL, target));
-                    JsonObject profile = GSON.fromJson(jsonResponse, JsonObject.class);
+        Bukkit.getScheduler().runTaskAsynchronously(MCTier.getInstance().plugin, () -> {
+            try {
+                String jsonResponse = fetchData(String.format(API_URL, target));
+                JsonObject profile = GSON.fromJson(jsonResponse, JsonObject.class);
 
-                    sender.sendMessage(Component.text("------------------------------------", NamedTextColor.DARK_GRAY).decoration(TextDecoration.STRIKETHROUGH, true));
+                sender.sendMessage(Component.text("------------------------------------", NamedTextColor.DARK_GRAY).decoration(TextDecoration.STRIKETHROUGH, true));
 
-                    JsonArray badges = profile.getAsJsonArray("badges");
-                    boolean hasCrownBadge = false;
-                    String crownDesc = "";
-                    for (int i = 0; i < badges.size(); i++) {
-                        JsonObject badge = badges.get(i).getAsJsonObject();
-                        String title = badge.get("title").getAsString();
-                        if (title.equals("Holding The Crown")) {
-                            hasCrownBadge = true;
-                            crownDesc = badge.get("desc").getAsString();
-                            break;
-                        }
+                JsonArray badges = profile.getAsJsonArray("badges");
+                boolean hasCrownBadge = false;
+                String crownDesc = "";
+                for (int i = 0; i < badges.size(); i++) {
+                    JsonObject badge = badges.get(i).getAsJsonObject();
+                    String title = badge.get("title").getAsString();
+                    if (title.equals("Holding The Crown")) {
+                        hasCrownBadge = true;
+                        crownDesc = badge.get("desc").getAsString();
+                        break;
                     }
-
-                    Component nameComponent = Component.text(profile.get("name").getAsString(), NamedTextColor.GREEN);
-                    if (hasCrownBadge) {
-                        nameComponent = nameComponent.append(Component.text(" 🜲", NamedTextColor.GOLD))
-                                .hoverEvent(HoverEvent.showText(Component.text()
-                                        .append(Component.text("Holding The Crown\n", NamedTextColor.GOLD))
-                                        .append(Component.text(crownDesc, NamedTextColor.GRAY))
-                                        .build()));
-                    }
-
-                    sender.sendMessage(Component.text("Tierlist Data for ", NamedTextColor.GRAY)
-                            .append(nameComponent));
-
-                    sender.sendMessage(Component.text("Region: ", NamedTextColor.GRAY)
-                            .append(Component.text(profile.get("region").getAsString(), NamedTextColor.GREEN))
-                            .append(Component.text(" | ", NamedTextColor.GRAY))
-                            .append(Component.text("Points: ", NamedTextColor.GRAY))
-                            .append(Component.text(profile.get("points").getAsString(), NamedTextColor.GREEN))
-                            .append(Component.text(" | ", NamedTextColor.GRAY))
-                            .append(Component.text("Overall: #", NamedTextColor.GRAY))
-                            .append(Component.text(profile.get("overall").getAsString(), NamedTextColor.GREEN)));
-
-                    sender.sendMessage(Component.text("------------------------------------", NamedTextColor.DARK_GRAY).decoration(TextDecoration.STRIKETHROUGH, true));
-
-                    JsonObject rankings = profile.getAsJsonObject("rankings");
-
-                    for (String mode : MODES) {
-                        if (rankings.has(mode)) {
-                            JsonObject ranking = rankings.getAsJsonObject(mode);
-                            TextComponent modeComponent = formatGameMode(mode, ranking, badges);
-                            sender.sendMessage(modeComponent);
-                        }
-                    }
-
-                    sender.sendMessage(Component.text("------------------------------------", NamedTextColor.DARK_GRAY).decoration(TextDecoration.STRIKETHROUGH, true));
-
-                } catch (Exception e) {
-                    sender.sendMessage(Component.text("Error fetching " + target + "'s MCTiers data!", NamedTextColor.RED));
                 }
-            });
-        }, 30L);
+
+                Component nameComponent = Component.text(profile.get("name").getAsString(), NamedTextColor.GREEN);
+                if (hasCrownBadge) {
+                    nameComponent = nameComponent.append(Component.text(" 🜲", NamedTextColor.GOLD))
+                            .hoverEvent(HoverEvent.showText(Component.text()
+                                    .append(Component.text("Holding The Crown\n", NamedTextColor.GOLD))
+                                    .append(Component.text(crownDesc, NamedTextColor.GRAY))
+                                    .build()));
+                }
+
+                sender.sendMessage(Component.text("Tierlist Data for ", NamedTextColor.GRAY)
+                        .append(nameComponent));
+
+                sender.sendMessage(Component.text("Region: ", NamedTextColor.GRAY)
+                        .append(Component.text(profile.get("region").getAsString(), NamedTextColor.GREEN))
+                        .append(Component.text(" | ", NamedTextColor.GRAY))
+                        .append(Component.text("Points: ", NamedTextColor.GRAY))
+                        .append(Component.text(profile.get("points").getAsString(), NamedTextColor.GREEN))
+                        .append(Component.text(" | ", NamedTextColor.GRAY))
+                        .append(Component.text("Overall: #", NamedTextColor.GRAY))
+                        .append(Component.text(profile.get("overall").getAsString(), NamedTextColor.GREEN)));
+
+                sender.sendMessage(Component.text("------------------------------------", NamedTextColor.DARK_GRAY).decoration(TextDecoration.STRIKETHROUGH, true));
+
+                JsonObject rankings = profile.getAsJsonObject("rankings");
+
+                for (String mode : MODES) {
+                    if (rankings.has(mode)) {
+                        JsonObject ranking = rankings.getAsJsonObject(mode);
+                        TextComponent modeComponent = formatGameMode(mode, ranking, badges);
+                        sender.sendMessage(modeComponent);
+                    }
+                }
+
+                sender.sendMessage(Component.text("------------------------------------", NamedTextColor.DARK_GRAY).decoration(TextDecoration.STRIKETHROUGH, true));
+
+            } catch (Exception e) {
+                sender.sendMessage(Component.text("Error fetching " + target + "'s MCTiers data!", NamedTextColor.RED));
+            }
+        });
     }
 
     private String getTierColorCode(int tier) {
